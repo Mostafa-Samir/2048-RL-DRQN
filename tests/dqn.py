@@ -25,15 +25,15 @@ with graph.as_default():
         reward = 4
         nextstate = [9, 8, 7, 6, 5, 4, 3, 2, 1]
 
-        a = trainer.get_action(state)
-        print '# Correct Action Retrival Behavior:'
-        expect_inrange(a, range(4))
+        a = trainer.get_action(state, [0,3])
+        print '# Correct Action Retrival Behavior (Train Mode):'
+        expect_inrange(a, [0,3])
 
         trainer.remember(state, action, reward, nextstate)
         print "# Store Experience with no Errors: Passed!"
         trainer.train()
         print "# Train with no Errors: Passed!"
 
-        a = trainer.get_action(state)
-        print '# Correct Action Retrival Behavior (After Training):'
-        expect_inrange(a, range(4))
+        a = trainer.get_action(state, [0,1,3], True)
+        print '# Correct Action Retrival Behavior (Play Mode):'
+        expect_inrange(a, [0,1,3])
