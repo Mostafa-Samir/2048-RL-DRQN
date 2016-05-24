@@ -1,0 +1,22 @@
+.ai-control-panel {
+    background: rgba(0,0,0,0.6);
+    width: 450px;
+    position: fixed;;
+    top: 30px;
+    height: 610px;
+    right: 0px;
+    z-index: 100;
+    color: white;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.ai-control-panel .dqn input[name='experience-size'] {
+    width: 50px;
+    text-align: center;
+}
+
+.ai-control-panel .dqn input[name='sample-size'] {
+    width: 50px;
+    text-align: center;
+}
