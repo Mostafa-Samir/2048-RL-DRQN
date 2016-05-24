@@ -1,2 +1,5 @@
 # Python compiled files
 *.pyc
+
+# tensorflow logdir for summaries
+tflogs
