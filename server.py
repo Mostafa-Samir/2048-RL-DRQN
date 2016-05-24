@@ -7,10 +7,6 @@ from ai.dqn import DQN
 
 import tensorflow as tf
 import os
-import logging
-
-log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)
 
 tensorflow_logdir = os.path.join(os.path.dirname(__file__), "tflogs")
 if os.path.exists(tensorflow_logdir):
