@@ -68,30 +68,8 @@ AI.getAction = function(state) {
     return availableMoves[randomMoveIndx];
 }
 
-AI.makeAMove = function(direction, training) {
-    let mode = training ? 'train' : 'play';
+AI.makeAMove = function(direction) {
     let state = this.state();
-
-    if(state.over && mode === 'train') {
-        this.trainingEpisodes;
-        this.playedGames++;
-        console.log("Episodes: %d/%d", this.playedGames, this.trainingEpisodes)
-
-        if(this.trainingEpisodes - this.playedGames > 0) {
-            this.restart();
-            state = this.state();
-        }
-        else {
-            return false;
-        }
-    }
-    else if(state.over && mode === 'play') {
-        return false;
-    }
-
-    if(state.won) {
-        this.GameManager.keepPlaying()
-    }
 
     this.move(direction);
     let newstate = this.state();
@@ -107,27 +85,37 @@ AI.makeAMove = function(direction, training) {
 AI._recursiveTrain = function() {
     let state = this.state();
 
-    $http.post('/dfnn/action', {state: state.grid._1d, playMode:false})
+    if(state.over) {
+        this.playedGames++;
+        console.log("Episodes: %d/%d", this.playedGames, this.trainingEpisodes);
+
+        if(this.playedGames === this.trainingEpisodes) {
+            return;
+        }
+        this.restart();
+        state = this.state();
+    }
+
+    if(state.won) {
+        this.GameManager.keepPlaying()
+    }
+
+    let availableMoves = this.listLegalActions();
+
+    $http.post('/dfnn/action', {
+        state: state.grid._1d,
+        playMode:false,
+        legalActions: availableMoves
+    })
     .then((response) => {
         let action = response.action;
         let experience = this.makeAMove(action, true);
 
-        return experience;
+        return $http.post('/dfnn/experience', experience);
     })
-    .then((experience) => {
-        if(!experience) {
-            return 'stop';
-        }
-        else {
-            return $http.post('/dfnn/experience', experience);
-        }
-    })
-    .then((control) => {
-        if(control === 'stop') {
-            return;
-        }
-        else if(control.success === 'true') {
-            AI._recursiveTrain();
+    .then((response) => {
+        if(response.success) {
+            this._recursiveTrain();
         }
     });
 }
@@ -135,17 +123,26 @@ AI._recursiveTrain = function() {
 AI._recursivePlay = function() {
     let state = this.state();
 
-    $http.post('/dfnn/action', {state: state.grid._1d, playMode:true})
+    if(state.over) {
+        return;
+    }
+
+    if(state.won) {
+        this.GameManager.keepPlaying()
+    }
+
+    let availableMoves = this.listLegalActions();
+
+    $http.post('/dfnn/action', {
+        state: state.grid._1d,
+        playMode:true,
+        legalActions: availableMoves
+    })
     .then((response) => {
         let action = response.action;
         let outcome = this.makeAMove(action);
 
-        if(!outcome) {
-            return;
-        }
-        else {
-            setTimeout(this._recursivePlay.bind(this), 500);
-        }
+        setTimeout(this._recursivePlay.bind(this), 500);
     });
 }
 
