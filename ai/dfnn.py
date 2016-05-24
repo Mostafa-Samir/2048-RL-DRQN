@@ -19,7 +19,7 @@ class Layer:
         self.input_size = input_size
         self.output_size = output_size
 
-        self.weights = tf.Variable(tf.truncated_normal([self.input_size, self.output_size], stddev=sqrt(2. / self.input_size)))
+        self.weights = tf.Variable(tf.truncated_normal([input_size, output_size], stddev=sqrt(2. / input_size)))
         self.bias = tf.Variable(tf.zeros([output_size]))
 
 
