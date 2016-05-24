@@ -228,7 +228,7 @@ class DQN:
         rewards = np.empty((self.minibatch_size,))
         nextstates = np.empty((self.minibatch_size, self.state_size))
 
-        for i, (state, action, reward, nextstate) in enumerate(self.experience):
+        for i, (state, action, reward, nextstate) in enumerate(samples):
             states[i] = state
             chosen_actions_filters[i][action] = 1.
             rewards[i] = reward
@@ -248,7 +248,8 @@ class DQN:
         })
 
         # update the target network
-        self.target_nn = self.prediction_nn.clone()
+        with self.session.graph.as_default():
+            self.target_nn = self.prediction_nn.clone()
 
         if summarize:
             self.summary_writer.add_summary(summary, self.iteration)
