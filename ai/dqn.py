@@ -164,17 +164,30 @@ class DQN:
 
         return epsilon0 - (t * (epsilon0 - epsilonT)) / T
 
-    def get_action(self, state):
+    def get_action(self, state, play_mode=False):
         """
         Returns the action to be carried out at this state
+
+        Parameters:
+        ----------
+        state: list
+            The state to get the action at
+        play_mode: bool
+            a flag to indicate if the action is needed for play mode
+            not for training, this would stop the epsilon-greedy behavior
+            and directly use the Qnn
         """
 
-        self.action_requests += 1
-        epsilon = self.current_epsilon()
         state = np.array([state], dtype=np.float32)
 
-        if random.random() < epsilon:
-            return random.randint(0, self.actions_count - 1)
+        if not play_mode:
+            self.action_requests += 1
+            epsilon = self.current_epsilon()
+
+            if random.random() < epsilon:
+                return random.randint(0, self.actions_count - 1)
+            else:
+                return self.session.run(self.predicted_actions, {self.states: state})
         else:
             return self.session.run(self.predicted_actions, {self.states: state})
 
