@@ -40,7 +40,7 @@ class Layer:
 
     def clone(self):
         """
-        returns a deep copy of the layer on initialization
+        returns a deep copy of the layer
         """
 
         layer_clone = Layer(self.input_size, self.output_size)
@@ -105,7 +105,7 @@ class DFCNN:
 
     def clone(self):
         """
-        returns a deep copy of the network on initialization
+        returns a deep copy of the network
         """
 
         nn_clone = DFCNN([], self.activation_fn_name)
