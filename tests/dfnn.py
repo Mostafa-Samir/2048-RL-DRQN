@@ -1,13 +1,7 @@
 from ai.dfnn import Layer, DFCNN
 import tensorflow as tf
-import numpy as np
 
-def expect_equal(value1, value2):
-    # value1, value2 are numpy.ndarray (or like)
-    if np.array_equal(value1, value2):
-        print "Passed!"
-    else:
-        print "Failed!"
+from utilis import expect_equal
 
 graph = tf.Graph()
 
