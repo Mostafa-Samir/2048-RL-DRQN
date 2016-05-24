@@ -98,7 +98,7 @@ class DFCNN:
         hidden_layers, output_layer = self.layers[:len(self.layers) - 1], self.layers[len(self.layers) - 1]
         activations = X
         for layer in hidden_layers:
-            activations = self.activation_fn(layer(X))
+            activations = self.activation_fn(layer(activations))
 
         return output_layer(activations)
 
