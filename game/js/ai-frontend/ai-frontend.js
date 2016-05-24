@@ -3,7 +3,8 @@
 // container object for the AI controls
 var AI = {};
 
-AI.experience = [];
+AI.trainingEpisodes = 1000;
+AI.playedGames = 0;
 
 AI.init = function() {
     this.GameManager = new GameManager(4, KeyboardInputManager, HTMLActuator, LocalStorageManager);
@@ -67,32 +68,95 @@ AI.getAction = function(state) {
     return availableMoves[randomMoveIndx];
 }
 
-AI.collectExperience = function(size) {
-    var lastScore = 0;
+AI.makeAMove = function(direction, training) {
+    let mode = training ? 'train' : 'play';
+    let state = this.state();
 
-    while(this.experience.length < size) {
-        var gameState = this.state();
+    if(state.over && mode === 'train') {
+        this.trainingEpisodes;
+        this.playedGames++;
+        console.log("Episodes: %d/%d", this.playedGames, this.trainingEpisodes)
 
-        if(gameState.over) {
-            lastScore = 0;
-            this.GameManager.restart();
+        if(this.trainingEpisodes - this.playedGames > 0) {
+            this.restart();
+            state = this.state();
         }
+        else {
+            return false;
+        }
+    }
+    else if(state.over && mode === 'play') {
+        return false;
+    }
 
-        var direction = this.getAction(gameState.grid._1d);
-        this.move(direction);
+    if(state.won) {
+        this.GameManager.keepPlaying()
+    }
 
-        var newState = this.state();
+    this.move(direction);
+    let newstate = this.state();
 
-        this.experience.push({
-            state: gameState.grid._1d,
-            action: direction,
-            reward: newState.score - gameState.score
-        });
+    return {
+        state: state.grid._1d,
+        action: direction,
+        reward: newstate.score - state.score,
+        nextstate: newstate.grid._1d
     }
 }
 
-AI.train = function() {
-    this.collectExperience(256);
-    $http.post('/dfnn/experience', {e: this.experience})
-    .then((res) => console.log(res));
+AI._recursiveTrain = function() {
+    let state = this.state();
+
+    $http.post('/dfnn/action', {state: state.grid._1d, playMode:false})
+    .then((response) => {
+        let action = response.action;
+        let experience = this.makeAMove(action, true);
+
+        return experience;
+    })
+    .then((experience) => {
+        if(!experience) {
+            return 'stop';
+        }
+        else {
+            return $http.post('/dfnn/experience', experience);
+        }
+    })
+    .then((control) => {
+        if(control === 'stop') {
+            return;
+        }
+        else if(control.success === 'true') {
+            AI._recursiveTrain();
+        }
+    });
+}
+
+AI._recursivePlay = function() {
+    let state = this.state();
+
+    $http.post('/dfnn/action', {state: state.grid._1d, playMode:true})
+    .then((response) => {
+        let action = response.action;
+        let outcome = this.makeAMove(action);
+
+        if(!outcome) {
+            return;
+        }
+        else {
+            setTimeout(this._recursivePlay.bind(this), 500);
+        }
+    });
+}
+
+AI.train = function(episodes) {
+    this.restart();  // restart the game first
+    this.trainingEpisodes = episodes;
+    this.playedGames = 0;
+
+    this._recursiveTrain();
+}
+
+AI.play = function() {
+    this._recursivePlay();
 }
