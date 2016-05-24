@@ -164,6 +164,20 @@ class DQN:
 
         return epsilon0 - (t * (epsilon0 - epsilonT)) / T
 
+    def constrained_argmax(self, array, constraints):
+        """
+        Gets the action with the maximum value provided that it's available
+        array: numpy.ndarray (1 x actions_count)
+        constraints: list
+        """
+        max_value = float("-inf")
+        max_action = -1
+        for i, value in enumerate(array[0]):
+            if value >= max_value and i in constraints:
+                max_value = value
+                max_action = i
+        return max_action
+
     def get_action(self, state, available_actions, play_mode=False):
         """
         Returns the action to be carried out at this state
@@ -191,13 +205,11 @@ class DQN:
                 return np.random.choice(available_actions)
             else:
                 actions_scores = self.session.run(self.actions_scores, {self.states: state})
-                actions_scores = np.array(actions_scores)[:, available_actions]
-                return np.argmax(actions_scores, axis=1)
+                return self.constrained_argmax(actions_scores, available_actions)
 
         else:
             actions_scores = self.session.run(self.actions_scores, {self.states: state})
-            actions_scores = np.array(actions_scores)[:, available_actions]
-            return np.argmax(actions_scores, axis=1)
+            return self.constrained_argmax(actions_scores, available_actions)
 
 
     def train(self):
