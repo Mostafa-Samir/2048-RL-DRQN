@@ -27,6 +27,8 @@ summary_writer = tf.train.SummaryWriter(os.path.dirname(__file__) + "/tflogs")
 qnn = DFCNN([16, 100, 50, 4])
 controller = DQN(qnn, optimizer, session, 16, 4)
 
+tf.initialize_all_variables().run()
+
 server = Flask(__name__, static_url_path='', static_folder='game')
 #websocket = SocketIO(server)
 
@@ -38,14 +40,14 @@ def index():
 @server.route('/dfnn/experience', methods=['POST'])
 def record_and_train():
     data = request.get_json()
-    controller.remember(data.state, data.action, data.reward, data.nextstate)
+    controller.remember(data['state'], data['action'], data['reward'], data['nextstate'])
     controller.train()
     return jsonify({'success': True})
 
 @server.route('/dfnn/action', methods=['POST'])
 def get_action():
     data = request.get_json()
-    action = controller.get_action(data.state)
+    action = controller.get_action(data['state'], data['playMode'])[0]
     return jsonify({'success': True, 'action': action})
 
 if __name__ == "__main__":
