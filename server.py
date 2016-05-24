@@ -8,6 +8,17 @@ from ai.dqn import DQN
 import tensorflow as tf
 import os
 
+tensorflow_logdir = os.path.join(os.path.dirname(__file__), "tflogs")
+if os.path.exists(tensorflow_logdir):
+    # clear all the logs if any
+    for entry in os.listdir(tensorflow_logdir):
+        entry_path = os.path.join(tensorflow_logdir, entry)
+        if(os.path.isfile(entry_path)):
+            os.unlink(entry_path)
+else:
+    #craete the directory
+    os.mkdir(tensorflow_logdir)
+
 tf.reset_default_graph()
 session = tf.InteractiveSession()
 optimizer = tf.train.GradientDescentOptimizer(0.1)
@@ -39,14 +50,3 @@ def get_action():
 
 if __name__ == "__main__":
     server.run(debug=True)
-
-    tensorflow_logdir = os.path.join(os.path.dirname(__file__), "tflog")
-    if os.path.exists(tensorflow_logdir):
-        # clear all the logs if any
-        for entry in os.listdir(tensorflow_logdir):
-            entry_path = os.path.join(tensorflow_logdir, entry)
-            if(os.path.isfile(entry_path)):
-                os.unlink(entry_path)
-    else:
-        #craete the directory
-        os.mkdir(tensorflow_logdir)
