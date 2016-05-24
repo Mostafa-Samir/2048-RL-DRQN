@@ -7,6 +7,10 @@ from ai.dqn import DQN
 
 import tensorflow as tf
 import os
+import logging
+
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 
 tensorflow_logdir = os.path.join(os.path.dirname(__file__), "tflogs")
 if os.path.exists(tensorflow_logdir):
@@ -19,15 +23,16 @@ else:
     #craete the directory
     os.mkdir(tensorflow_logdir)
 
-tf.reset_default_graph()
-session = tf.InteractiveSession()
-optimizer = tf.train.GradientDescentOptimizer(0.1)
-summary_writer = tf.train.SummaryWriter(os.path.dirname(__file__) + "/tflogs")
+graph = tf.Graph()
+with graph.as_default():
+    session = tf.InteractiveSession(graph=graph)
+    optimizer = tf.train.GradientDescentOptimizer(0.1)
+    summary_writer = tf.train.SummaryWriter(os.path.dirname(__file__) + "/tflogs")
 
-qnn = DFCNN([16, 100, 50, 4])
-controller = DQN(qnn, optimizer, session, 16, 4)
+    qnn = DFCNN([16, 100, 50, 4])
+    controller = DQN(qnn, optimizer, session, 16, 4)
 
-tf.initialize_all_variables().run()
+    tf.initialize_all_variables().run()
 
 server = Flask(__name__, static_url_path='', static_folder='game')
 #websocket = SocketIO(server)
@@ -47,8 +52,9 @@ def record_and_train():
 @server.route('/dfnn/action', methods=['POST'])
 def get_action():
     data = request.get_json()
-    action = controller.get_action(data['state'], data['playMode'])[0]
+    print data
+    action = controller.get_action(data['state'], data['legalActions'], data['playMode'])
     return jsonify({'success': True, 'action': action})
 
 if __name__ == "__main__":
-    server.run(debug=True)
+    server.run()
