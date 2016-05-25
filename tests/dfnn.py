@@ -33,17 +33,17 @@ with tf.Session(graph=graph) as session:
     expect_equal(_nnvalue, _nncvalue)
 
     # changing the weigths of a layer after initialization
-    layer.weights = layer.weights * 2
+    layer.weights.assign(layer.weights * 2)
 
-    layer_clone = layer.clone()
+    layer_clone.assign_to(layer)
 
     value2 = layer(sample_data)
     cvalue2 = layer_clone(sample_data)
 
     # changing a layer in the neural network after initialization
-    nn.layers[0] = layer_nn
+    nn.layers[0].assign_to(layer_nn)
 
-    nn_clone = nn.clone()
+    nn_clone.assign_to(nn)
 
     nnvalue2 = nn(sample_data)
     nncvalue2 = nn_clone(sample_data)
