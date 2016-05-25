@@ -20,3 +20,43 @@
     width: 50px;
     text-align: center;
 }
+
+.training-dashboard {
+    background: rgba(0,0,0,0.7);
+    color: white;
+    position: fixed;
+    width: 100%;
+    border-left: 10px solid #faf8ef;
+    border-right: 10px solid #faf8ef;
+    box-sizing: border-box;
+    padding: 10px;
+    bottom: 0px;
+    z-index: 100;
+}
+
+.training-dashboard span.show-hide {
+    display: inline-block;
+    float: right;
+    cursor: pointer;
+}
+
+.training-dashboard span.show-hide:hover {
+    font-weight: bold;
+}
+
+.training-dashboard input[name='train-episodes'] {
+    width: 50px;
+}
+
+.training-dashboard div#learning-curve {
+    width: 48%;
+    float: left;
+    margin-right:1%;
+    height: 400px;
+}
+
+.training-dashboard div#score-chart {
+    width: 48%;
+    margin-left:1%;
+    height: 400px;
+}

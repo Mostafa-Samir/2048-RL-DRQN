@@ -86,6 +86,21 @@
     </p>
   </div>
 
+    <div class='training-dashboard'>
+        <p>
+            <span class='show-hide'>Hide</span>
+        </p>
+        <div class='dashboard-content'>
+            <p>
+                Train for: <input type='number' name='train-episodes'>
+                <button id='start-training'>Start</button>
+                <span class='progress'></span>
+            </p>
+            <div id='learning-curve'></div>
+            <div id='score-chart'></div>
+        </div>
+    </div>
+
   <script src="js/bind_polyfill.js"></script>
   <script src="js/classlist_polyfill.js"></script>
   <script src="js/animframe_polyfill.js"></script>
@@ -95,10 +110,11 @@
   <script src="js/tile.js"></script>
   <script src="js/local_storage_manager.js"></script>
   <script src="js/game_manager.js"></script>
-  <script src="js/application.js"></script>
-  <script src="js/canvasjs.min.js"></script>
-  <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
   <script src="js/ai-frontend/communcation.service.js"></script>
   <script src="js/ai-frontend/ai-frontend.js"></script>
+  <script src="js/ai-frontend/charter.js"></script>
+  <script src="js/ai-frontend/progress-reporter.js"></script>
+  <script src="js/canvasjs.min.js"></script>
+  <script src="js/application.js"></script>
 </body>
 </html>
