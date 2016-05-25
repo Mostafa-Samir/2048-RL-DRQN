@@ -11,7 +11,7 @@ class DQN:
                        session,
                        state_size,
                        actions_count,
-                       reply_memory_size=1000,
+                       reply_memory_size=10000,
                        minibatch_size=32,
                        final_exploration_probability=0.05,
                        exploration_period=1000,
@@ -161,7 +161,7 @@ class DQN:
         T = self.exploration_period
         if(t >= T):
             return self.epsilon_final
-        
+
         epsilon0 = self.epsilon_initial
         epsilonT = self.epsilon_final
 
@@ -256,3 +256,5 @@ class DQN:
             self.summary_writer.add_summary(summary, self.iteration)
 
         self.iteration +=1
+
+        return (loss, self.iteration)
