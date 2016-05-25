@@ -22,11 +22,11 @@ else:
 graph = tf.Graph()
 with graph.as_default():
     session = tf.InteractiveSession(graph=graph)
-    optimizer = tf.train.GradientDescentOptimizer(0.1)
-    summary_writer = tf.train.SummaryWriter(os.path.dirname(__file__) + "/tflogs")
+    optimizer = tf.train.GradientDescentOptimizer(0.01)
+    summary_report = tf.train.SummaryWriter(os.path.dirname(__file__) + "/tflogs")
 
     qnn = DFCNN([16, 100, 50, 4])
-    controller = DQN(qnn, optimizer, session, 16, 4)
+    controller = DQN(qnn, optimizer, session, 16, 4, exploration_period=2000, summary_writer=summary_report)
 
     tf.initialize_all_variables().run()
 
@@ -48,9 +48,8 @@ def record_and_train():
 @server.route('/dfnn/action', methods=['POST'])
 def get_action():
     data = request.get_json()
-    print data
     action = controller.get_action(data['state'], data['legalActions'], data['playMode'])
     return jsonify({'success': True, 'action': action})
 
 if __name__ == "__main__":
-    server.run()
+    server.run(debug=True)
