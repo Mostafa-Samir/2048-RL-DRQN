@@ -22,11 +22,11 @@ else:
 graph = tf.Graph()
 with graph.as_default():
     session = tf.InteractiveSession(graph=graph)
-    optimizer = tf.train.GradientDescentOptimizer(0.01)
+    optimizer = tf.train.AdadeltaOptimizer()
     summary_report = tf.train.SummaryWriter(os.path.dirname(__file__) + "/tflogs")
 
-    qnn = DFCNN([16, 100, 50, 4])
-    controller = DQN(qnn, optimizer, session, 16, 4, exploration_period=2000, summary_writer=summary_report)
+    qnn = DFCNN([16, 1024, 4])
+    controller = DQN(qnn, optimizer, session, 16, 4, exploration_period=2000, minibatch_size=64, summary_writer=summary_report)
 
     tf.initialize_all_variables().run()
 
@@ -42,8 +42,11 @@ def index():
 def record_and_train():
     data = request.get_json()
     controller.remember(data['state'], data['action'], data['reward'], data['nextstate'])
-    controller.train()
-    return jsonify({'success': True})
+    outcome = controller.train()
+    if outcome is None:
+        return jsonify({'success': True})
+    else:
+        return jsonify({'success': True, 'loss': float(outcome[0]), 'step':outcome[1]})
 
 @server.route('/dfnn/action', methods=['POST'])
 def get_action():
