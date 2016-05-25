@@ -3,7 +3,7 @@ from math import sqrt
 
 class Layer:
 
-    def __init__(self, input_size, output_size):
+    def __init__(self, input_size=0, output_size=0, copy_from=None):
         """
         constructs a layer in a deep fully-connected neural network
 
@@ -16,11 +16,20 @@ class Layer:
         indx: int
             the index of the layer in the neural network
         """
-        self.input_size = input_size
-        self.output_size = output_size
+        if copy_from is None:
+            self.input_size = input_size
+            self.output_size = output_size
 
-        self.weights = tf.Variable(tf.truncated_normal([input_size, output_size], stddev=sqrt(2. / input_size)))
-        self.bias = tf.Variable(tf.zeros([output_size]))
+            self.weights = tf.Variable(tf.truncated_normal([input_size, output_size], stddev=sqrt(2. / input_size)))
+            self.bias = tf.Variable(tf.zeros([output_size]))
+        else:
+            source = copy_from
+
+            self.input_size = source.input_size
+            self.output_size = source.output_size
+
+            self.weights = tf.Variable(source.weights.initialized_value())
+            self.bias = tf.Variable(source.bias.initialized_value())
 
 
     def __call__(self, X):
@@ -43,11 +52,26 @@ class Layer:
         returns a deep copy of the layer
         """
 
-        layer_clone = Layer(self.input_size, self.output_size)
-        layer_clone.weights = layer_clone.weights.assign(self.weights)
-        layer_clone.bias = layer_clone.bias.assign(self.bias)
+        layer_clone = Layer(copy_from=self)
 
         return layer_clone
+
+    def assign_to(self, other):
+        """
+        assigns the weigts and the biases of the layer to the
+        values of another
+
+        Parameters:
+        ----------
+        other: Layer
+            The target layer
+        """
+
+        if(self.input_size == other.input_size and self.output_size == other.output_size):
+            weights_assign = self.weights.assign(other.weights)
+            bias_assign = self.bias.assign(other.bias)
+        else:
+            print "Layer Mismatch!"
 
 
 class DFCNN:
@@ -102,6 +126,21 @@ class DFCNN:
 
         return output_layer(activations)
 
+    def assign_to(self, other):
+        """
+        assigns the weigths and biases of the layers to the values of
+        another network
+
+        Parameters:
+        ----------
+        other: DFCNN
+            the target network
+        """
+        if(len(self.layers) == len(other.layers)):
+            for i in range(len(self.layers)):
+                self.layers[i].assign_to(other.layers[i])
+        else:
+            print "Network Mismatch!"
 
     def clone(self):
         """
