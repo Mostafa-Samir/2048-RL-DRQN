@@ -159,6 +159,9 @@ class DQN:
         """
         t = self.action_requests
         T = self.exploration_period
+        if(t >= T):
+            return self.epsilon_final
+        
         epsilon0 = self.epsilon_initial
         epsilonT = self.epsilon_final
 
@@ -247,9 +250,7 @@ class DQN:
             self.next_states: nextstates
         })
 
-        # update the target network
-        with self.session.graph.as_default():
-            self.target_nn = self.prediction_nn.clone()
+        self.target_nn.assign_to(self.prediction_nn)
 
         if summarize:
             self.summary_writer.add_summary(summary, self.iteration)
