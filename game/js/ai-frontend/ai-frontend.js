@@ -5,9 +5,17 @@ var AI = {};
 
 AI.trainingEpisodes = 1000;
 AI.playedGames = 0;
+AI.afterTrainCallback = null;
 
-AI.init = function() {
+AI.log2 = function(state) {
+    return state.map((cell) => cell === 0 ? 0 : Math.log2(cell))
+}
+
+AI.init = function(learningCurveCharter, scoresCharter, reporter) {
     this.GameManager = new GameManager(4, KeyboardInputManager, HTMLActuator, LocalStorageManager);
+    this.learningCurveCharter = learningCurveCharter;
+    this.scoresCharter = scoresCharter;
+    this.reporter = reporter;
 };
 
 AI.move = function(direction) {
@@ -75,10 +83,10 @@ AI.makeAMove = function(direction) {
     let newstate = this.state();
 
     return {
-        state: state.grid._1d,
+        state: this.log2(state.grid._1d),
         action: direction,
         reward: newstate.score - state.score,
-        nextstate: newstate.grid._1d
+        nextstate: this.log2(newstate.grid._1d)
     }
 }
 
@@ -89,7 +97,22 @@ AI._recursiveTrain = function() {
         this.playedGames++;
         console.log("Episodes: %d/%d", this.playedGames, this.trainingEpisodes);
 
+
+        if(this.scoresCharter) {
+            let datapoint = {
+                x: this.playedGames,
+                y: state.score
+            };
+
+            this.scoresCharter.update(datapoint);
+        }
+
+        if(this.reporter) {
+            this.reporter.report(this.playedGames, this.trainingEpisodes);
+        }
+
         if(this.playedGames === this.trainingEpisodes) {
+            this.afterTrainCallback();
             return;
         }
         this.restart();
@@ -103,7 +126,7 @@ AI._recursiveTrain = function() {
     let availableMoves = this.listLegalActions();
 
     $http.post('/dfnn/action', {
-        state: state.grid._1d,
+        state: this.log2(state.grid._1d),
         playMode:false,
         legalActions: availableMoves
     })
@@ -115,6 +138,14 @@ AI._recursiveTrain = function() {
     })
     .then((response) => {
         if(response.success) {
+            if(this.learningCurveCharter) {
+                let point = {
+                    x: response.step,
+                    y: response.loss
+                }
+
+                this.learningCurveCharter.update(point);
+            }
             this._recursiveTrain();
         }
     });
@@ -146,10 +177,11 @@ AI._recursivePlay = function() {
     });
 }
 
-AI.train = function(episodes) {
+AI.train = function(episodes, callback) {
     this.restart();  // restart the game first
     this.trainingEpisodes = episodes;
     this.playedGames = 0;
+    this.afterTrainCallback = callback || function() { };
 
     this._recursiveTrain();
 }
