@@ -152,3 +152,16 @@ Grid.prototype.getNumericalLinearization = function() {
 
     return linearization;
 };
+
+Grid.prototype.maxCellValue = function() {
+
+    var numericalGrid = this.getNumericalRepresentation();
+
+    var max = numericalGrid[0][0];
+    for(var x = 0; x < 4; x++)
+        for(var y = 0; y <4 ; y++)
+            if (numericalGrid[x][y] > max)
+                max = numericalGrid[x][y];
+
+    return max;
+};
