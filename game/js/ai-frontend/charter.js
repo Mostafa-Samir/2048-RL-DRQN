@@ -14,6 +14,9 @@ function Charter(container, type, title, maxDatapoints) {
     this.maxDatapoints = this.maxDatapoints || 5000;
 
     this.datapoints = [{x: 0, y: 0}];
+    this.average = 0;
+    this.validDpsCount = 0;
+    this.meanDatapoints = [{x: 0, y:0}]
 
     this.chart = new CanvasJS.Chart(this.container, {
         title: {
@@ -22,10 +25,16 @@ function Charter(container, type, title, maxDatapoints) {
             fontColor: "white"
         },
         backgroundColor: null,
-        data: [{
-            type: this.type,
-            dataPoints: this.datapoints
-        }]
+        data: [
+            {
+                type: this.type,
+                dataPoints: this.datapoints
+            },
+            {
+                type: 'line',
+                dataPoints: this.meanDatapoints
+            }
+        ]
     });
 
     this.chart.render();
@@ -36,9 +45,22 @@ function Charter(container, type, title, maxDatapoints) {
  * @param newdatapoint {Object}: the new datapoint {x, y}
 **/
 Charter.prototype.update = function (newdatapoint) {
+    if(!newdatapoint.x || !newdatapoint.y) {
+        return;
+    }
+
+    this.validDpsCount++;
+
     this.datapoints.push(newdatapoint);
+    this.average += (1 / this.validDpsCount) * (newdatapoint.y - this.average)
+    this.meanDatapoints.push({x: newdatapoint.x, y: this.average})
+
     if(this.datapoints.length > this.maxDatapoints) {
         this.datapoints.shift();
+    }
+
+    if(this.meanDatapoints.length > this.maxDatapoints) {
+        this.meanDatapoints.shift();
     }
 
     this.chart.render();
