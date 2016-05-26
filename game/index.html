@@ -92,9 +92,18 @@
         </p>
         <div class='dashboard-content'>
             <p>
+                Load a Trained QNN:
+                <select id='trained-model'>
+                    <option value=""></option>
+                </select>
+                <button id='load-model'>Load</button>
+            <p>
                 Train for: <input type='number' name='train-episodes'>
                 <button id='start-training'>Start</button>
                 <span class='progress'></span>
+            </p>
+            <p>
+                <button id='save-model'>Save the current QNN</button>
             </p>
             <div id='learning-curve'></div>
             <div id='score-chart'></div>
