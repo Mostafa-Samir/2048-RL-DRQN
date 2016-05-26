@@ -78,14 +78,19 @@ AI.getAction = function(state) {
 
 AI.makeAMove = function(direction) {
     let state = this.state();
+    let countEmpyCells = (counter, cell) => cell ? counter : ++counter
+    let emptyCount = state.grid._1d.reduce(countEmpyCells, 0);
+    emptyCount = emptyCount || 1;
 
     this.move(direction);
     let newstate = this.state();
+    let newEmptyCount = state.grid._1d.reduce(countEmpyCells, 0);
+    newEmptyCount = newEmptyCount || 1;
 
     return {
         state: this.log2(state.grid._1d),
         action: direction,
-        reward: newstate.score - state.score,
+        reward: 0.25*(Math.log2(newEmptyCount)*newstate.score-Math.log2(emptyCount)*state.score),
         nextstate: this.log2(newstate.grid._1d)
     }
 }
