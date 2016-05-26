@@ -7,6 +7,9 @@ from ai.dqn import DQN
 
 import tensorflow as tf
 import os
+import re
+
+dirname = os.path.dirname(__file__)
 
 tensorflow_logdir = os.path.join(os.path.dirname(__file__), "tflogs")
 if os.path.exists(tensorflow_logdir):
@@ -53,6 +56,26 @@ def get_action():
     data = request.get_json()
     action = controller.get_action(data['state'], data['legalActions'], data['playMode'])
     return jsonify({'success': True, 'action': action})
+
+@server.route('/dfnn/save', methods=['POST'])
+def save_qnn():
+    data = request.get_json()
+    qnn.save(session, dirname + "/saved-models/" + data['filename'])
+    return jsonify({'success': True})
+
+@server.route('/dfnn/load', methods=['POST'])
+def load_qnn():
+    data = request.get_json()
+    qnn.restore(session, dirname + "/saved-models/" + data['filename'])
+    return jsonify({'sucess': True})
+
+@server.route('/dfnn/saved-models', methods=['GET'])
+def list_saved_qnns():
+    saved_qnns = [];
+    for entry in os.listdir(dirname + "/saved-models"):
+        if(re.match(r'.*\.ckpt$', entry)):
+            saved_qnns.append(entry)
+    return jsonify({'success': True, 'models': saved_qnns})
 
 if __name__ == "__main__":
     server.run(debug=True)
