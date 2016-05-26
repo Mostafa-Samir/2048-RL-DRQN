@@ -250,7 +250,7 @@ class DQN:
             self.next_states: nextstates
         })
 
-        self.target_nn.assign_to(self.prediction_nn)
+        self.target_nn.assign_to(self.prediction_nn, self.session)
 
         if summarize:
             self.summary_writer.add_summary(summary, self.iteration)
