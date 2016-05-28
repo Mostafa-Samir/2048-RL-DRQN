@@ -95,9 +95,10 @@ class DQN:
         #self.final_states_filter = tf.placeholder(tf.float32, (None,))
         self.rewards = tf.placeholder(tf.float32, (None,))
         self.experience_action_filter = tf.placeholder(tf.float32, (None, self.actions_count))
+        self.dropout_prop = tf.placeholder_with_default(0)
 
         # pi(S) = argmax Q(S,a) over a
-        self.actions_scores = tf.identity(self.prediction_nn(self.states))
+        self.actions_scores = tf.identity(self.prediction_nn(self.states, self.dropout_prop))
         self.predicted_actions = tf.argmax(self.actions_scores, dimension=1)
 
         # future_estimate = R + gamma * max Q(S',a') over a'
@@ -212,7 +213,8 @@ class DQN:
             if random.random() < epsilon:
                 return np.random.choice(available_actions)
             else:
-                actions_scores = self.session.run(self.actions_scores, {self.states: state})
+                feed_dict = {self.states: state, self.dropout_prop: 0}
+                actions_scores = self.session.run(self.actions_scores, feed_dict)
                 return self.constrained_argmax(actions_scores, available_actions)
 
         else:
@@ -253,6 +255,7 @@ class DQN:
             self.experience_action_filter: chosen_actions_filters,
             self.rewards: rewards,
             self.next_states: nextstates
+            self.dropout_prop: 0.5
         })
 
         if self.iteration != 0 and self.iteration % self.freeze_period == 0:
