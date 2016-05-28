@@ -20,8 +20,9 @@ class Layer:
             self.name = "layer" + str(indx)
             self.input_size = input_size
             self.output_size = output_size
+            self.init_stddev = min(0.02, sqrt(2. / input_size))
 
-            self.weights = tf.Variable(tf.truncated_normal([input_size, output_size], stddev=sqrt(2. / input_size)), name=self.name + "_weights")
+            self.weights = tf.Variable(tf.truncated_normal([input_size, output_size], stddev=self.init_stddev), name=self.name + "_weights")
             self.bias = tf.Variable(tf.zeros([output_size]), name=self.name + "_bias")
         else:
             source = copy_from
