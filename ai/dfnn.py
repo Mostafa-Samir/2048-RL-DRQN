@@ -115,7 +115,7 @@ class DFCNN:
                 self.layers.append(Layer(input_size, output_size, i))
 
 
-    def __call__(self, X):
+    def __call__(self, X, dropout_prop=0):
         """
         Performs a forward run of the neural network and retunrns the output
 
@@ -123,6 +123,8 @@ class DFCNN:
         ----------
         X: Tensor
             the input data to feed forward the neural network
+        dropout_prop: float
+            the probability of dropping an activation between layers
         Returns: Tensor
             A tensor of the output size shape
         """
@@ -130,6 +132,7 @@ class DFCNN:
         activations = X
         for layer in hidden_layers:
             activations = self.activation_fn(layer(activations))
+            activations = tf.nn.dropout(activations, 1.0 - dropout_prop)
 
         return output_layer(activations)
 
