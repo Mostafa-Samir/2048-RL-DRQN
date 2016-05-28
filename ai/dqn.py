@@ -16,6 +16,7 @@ class DQN:
                        final_exploration_probability=0.05,
                        exploration_period=1000,
                        discount_factor=0.95,
+                       target_freeze_period=1000,
                        summary_writer=None):
         """
         constructs a DQN Trainer
@@ -47,6 +48,8 @@ class DQN:
             decrease from 1.0 to final_exploration_probability
         discount_factor: float [0, 1]
             The MDP's reward discount factor
+        target_freeze_period: int
+            The number of steps the target qnn is kept frozen
         summary_writer: tf.SummaryWriter
             Tensorflow summary writer
         """
@@ -68,6 +71,8 @@ class DQN:
         self.exploration_period = exploration_period
 
         self.discount = tf.constant(discount_factor)
+
+        self.freeze_period = target_freeze_period
 
         # counters for the Trainer
         self.action_requests = 0  # captures how many times the action method was called
@@ -111,7 +116,7 @@ class DQN:
         gradients = self.optimizer.compute_gradients(self.loss)
         for i, (grad, var) in enumerate(gradients):
             if grad is not None:
-                gradients[i] = (tf.clip_by_norm(grad, 5), var)
+                gradients[i] = (tf.clip_by_value(grad, -1, 1), var)
 
         self.train_computation  = self.optimizer.apply_gradients(gradients)
 
@@ -250,7 +255,8 @@ class DQN:
             self.next_states: nextstates
         })
 
-        self.target_nn.assign_to(self.prediction_nn, self.session)
+        if self.iteration != 0 and self.iteration % self.freeze_period == 0:
+            self.target_nn.assign_to(self.prediction_nn, self.session)
 
         if summarize:
             self.summary_writer.add_summary(summary, self.iteration)
