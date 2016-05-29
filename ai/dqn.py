@@ -255,7 +255,7 @@ class DQN:
             self.experience_action_filter: chosen_actions_filters,
             self.rewards: rewards,
             self.next_states: nextstates,
-            self.dropout_prop: 0.5
+            self.dropout_prop: 0
         })
 
         if self.iteration != 0 and self.iteration % self.freeze_period == 0:
