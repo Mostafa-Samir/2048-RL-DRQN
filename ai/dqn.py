@@ -95,6 +95,7 @@ class DQN:
         #self.final_states_filter = tf.placeholder(tf.float32, (None,))
         self.rewards = tf.placeholder(tf.float32, (None,))
         self.experience_action_filter = tf.placeholder(tf.float32, (None, self.actions_count))
+        self.next_legal_actions_filter = tf.placeholder(tf.float32, (None, self.actions_count))
         self.dropout_prop = tf.placeholder(tf.float32)
 
         # pi(S) = argmax Q(S,a) over a
@@ -103,7 +104,7 @@ class DQN:
 
         # future_estimate = R + gamma * max Q(S',a') over a'
         self.next_actions_scores = tf.stop_gradient(self.target_nn(self.next_states))
-        self.target_values = tf.reduce_max(self.next_actions_scores, reduction_indices=[1,])
+        self.target_values = tf.reduce_max(self.next_actions_scores + self.next_legal_actions_filter, reduction_indices=[1,])
         self.future_estimate = self.rewards * self.discount * self.target_values
 
         # predicted_value = Q(S, a)
@@ -134,24 +135,26 @@ class DQN:
         self.no_op = tf.no_op()
 
 
-    def remember(self, state, action, reward, nextstate):
+    def remember(self, state, action, reward, nextstate, next_legal_actions):
         """
         remembers an experience in the reply memory
 
         Parameters:
         ----------
-        state: numpy.ndarray
+        state: list
             The initial state of the experience
         action: int
             The action took at the intial state
         reward: float
             The reward recived after taking the action
-        nextstate: numpy.ndarray
+        nextstate: list
             The next state to which the agent transitioned after
             taking the action
+        next_legal_actions: list
+            The list of legal actions for nextstate
         """
 
-        new_experience = (state, action, reward, nextstate)
+        new_experience = (state, action, reward, nextstate, next_legal_actions)
         self.experience.append(new_experience)
 
         if len(self.experience) > self.reply_memory_size:
@@ -237,12 +240,17 @@ class DQN:
         chosen_actions_filters = np.zeros((self.minibatch_size, self.actions_count))
         rewards = np.empty((self.minibatch_size,))
         nextstates = np.empty((self.minibatch_size, self.state_size))
+        next_legal_actions_filters = np.zeros((self.minibatch_size, self.actions_count))
 
-        for i, (state, action, reward, nextstate) in enumerate(samples):
+        for i, (state, action, reward, nextstate, next_legal_actions) in enumerate(samples):
             states[i] = state
             chosen_actions_filters[i][action] = 1.
             rewards[i] = reward
             nextstates[i] = nextstate
+
+            for action in range(self.actions_count):
+                if action not in next_legal_actions:
+                    next_legal_actions_filters[i][action] = float("-inf")
 
         summarize = self.iteration % 100 == 0 and self.summary_writer is not None
 
@@ -255,6 +263,7 @@ class DQN:
             self.experience_action_filter: chosen_actions_filters,
             self.rewards: rewards,
             self.next_states: nextstates,
+            self.next_legal_actions_filter: next_legal_actions_filters,
             self.dropout_prop: 0
         })
 
