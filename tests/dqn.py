@@ -24,12 +24,13 @@ with graph.as_default():
         action = 2
         reward = 4
         nextstate = [9, 8, 7, 6, 5, 4, 3, 2, 1]
+        legals = [0,2]
 
         a = trainer.get_action(state, [0,3])
         print '# Correct Action Retrival Behavior (Train Mode):'
         expect_inrange(a, [0,3])
 
-        trainer.remember(state, action, reward, nextstate)
+        trainer.remember(state, action, reward, nextstate, legals)
         print "# Store Experience with no Errors: Passed!"
         trainer.train()
         print "# Train with no Errors: Passed!"
