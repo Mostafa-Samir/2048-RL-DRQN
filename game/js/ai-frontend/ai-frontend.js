@@ -86,12 +86,19 @@ AI.makeAMove = function(direction) {
     let newstate = this.state();
     let newEmptyCount = state.grid._1d.reduce(countEmpyCells, 0);
     newEmptyCount = newEmptyCount || 1;
+    let newStateMaxTile = this.GameManager.grid.maxCellValue();
+
+    let plainReward = newstate.score - state.score;
+    let adjustedReward = 0.25*(Math.log2(newEmptyCount)*newstate.score-Math.log2(emptyCount)*state.score);
+    let _adjustedReward = (Math.log2(newStateMaxTile) / 11) * adjustedReward;
+    let nextLegalActions = this.listLegalActions()
 
     return {
         state: this.log2(state.grid._1d),
         action: direction,
-        reward: 0.25*(Math.log2(newEmptyCount)*newstate.score-Math.log2(emptyCount)*state.score),
-        nextstate: this.log2(newstate.grid._1d)
+        reward:  _adjustedReward,
+        nextstate: this.log2(newstate.grid._1d),
+        nextLegalActions: nextLegalActions
     }
 }
 
@@ -178,7 +185,7 @@ AI._recursivePlay = function() {
         let action = response.action;
         let outcome = this.makeAMove(action);
 
-        setTimeout(this._recursivePlay.bind(this), 500);
+        this._recursivePlay();
     });
 }
 
