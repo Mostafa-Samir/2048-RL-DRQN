@@ -28,8 +28,8 @@ with graph.as_default():
     optimizer = tf.train.AdadeltaOptimizer()
     summary_report = tf.train.SummaryWriter(os.path.dirname(__file__) + "/tflogs")
 
-    qnn = DFCNN([16, 1024, 4])
-    controller = DQN(qnn, optimizer, session, 16, 4, exploration_period=2000, minibatch_size=64, summary_writer=summary_report)
+    qnn = DFCNN([16, 200, 200, 200, 200, 4])
+    controller = DQN(qnn, optimizer, session, 16, 4, final_exploration_probability=0.05, exploration_period=0, minibatch_size=128, summary_writer=summary_report)
 
     tf.initialize_all_variables().run()
 
@@ -44,7 +44,7 @@ def index():
 @server.route('/dfnn/experience', methods=['POST'])
 def record_and_train():
     data = request.get_json()
-    controller.remember(data['state'], data['action'], data['reward'], data['nextstate'])
+    controller.remember(data['state'], data['action'], data['reward'], data['nextstate'], data['nextLegalActions'])
     outcome = controller.train()
     if outcome is None:
         return jsonify({'success': True})
