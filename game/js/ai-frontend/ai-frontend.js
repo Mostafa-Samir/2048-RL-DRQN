@@ -96,7 +96,7 @@ AI.makeAMove = function(direction) {
     return {
         state: this.log2(state.grid._1d),
         action: direction,
-        reward:  _adjustedReward,
+        reward:  plainReward,
         nextstate: this.log2(newstate.grid._1d),
         nextLegalActions: nextLegalActions
     }

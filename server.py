@@ -25,11 +25,11 @@ else:
 graph = tf.Graph()
 with graph.as_default():
     session = tf.InteractiveSession(graph=graph)
-    optimizer = tf.train.AdadeltaOptimizer()
+    optimizer = tf.train.GradientDescentOptimizer(0.001)
     summary_report = tf.train.SummaryWriter(os.path.dirname(__file__) + "/tflogs")
 
-    qnn = DFCNN([16, 200, 200, 200, 200, 4])
-    controller = DQN(qnn, optimizer, session, 16, 4, final_exploration_probability=0.05, exploration_period=0, minibatch_size=128, summary_writer=summary_report)
+    qnn = DFCNN([16, 64 , 32, 4])
+    controller = DQN(qnn, optimizer, session, 16, 4, final_exploration_probability=0.05, exploration_period=1000, minibatch_size=128, summary_writer=summary_report)
 
     tf.initialize_all_variables().run()
 

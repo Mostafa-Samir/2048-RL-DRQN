@@ -95,7 +95,7 @@ class DQN:
         #self.final_states_filter = tf.placeholder(tf.float32, (None,))
         self.rewards = tf.placeholder(tf.float32, (None,))
         self.experience_action_filter = tf.placeholder(tf.float32, (None, self.actions_count))
-        self.next_legal_actions_filter = tf.placeholder(tf.float32, (None, self.actions_count))
+        #self.next_legal_actions_filter = tf.placeholder(tf.float32, (None, self.actions_count))
         self.dropout_prop = tf.placeholder(tf.float32)
 
         # pi(S) = argmax Q(S,a) over a
@@ -104,8 +104,8 @@ class DQN:
 
         # future_estimate = R + gamma * max Q(S',a') over a'
         self.next_actions_scores = tf.stop_gradient(self.target_nn(self.next_states))
-        self.target_values = tf.reduce_max(self.next_actions_scores + self.next_legal_actions_filter, reduction_indices=[1,])
-        self.future_estimate = self.rewards * self.discount * self.target_values
+        self.target_values = tf.reduce_max(self.next_actions_scores, reduction_indices=[1,])
+        self.future_estimate = self.rewards + self.discount * self.target_values
 
         # predicted_value = Q(S, a)
         self.experience_action_score = self.actions_scores * self.experience_action_filter
@@ -124,10 +124,10 @@ class DQN:
 
         # summaries
         # Add histograms for gradients.
-        for grad, var in gradients:
+        """for grad, var in gradients:
             tf.histogram_summary(var.name, var)
             if grad is not None:
-                tf.histogram_summary(var.name + '/gradients', grad)
+                tf.histogram_summary(var.name + '/gradients', grad)"""
         # loss summary
         tf.scalar_summary("loss", self.loss)
 
@@ -263,7 +263,7 @@ class DQN:
             self.experience_action_filter: chosen_actions_filters,
             self.rewards: rewards,
             self.next_states: nextstates,
-            self.next_legal_actions_filter: next_legal_actions_filters,
+            #self.next_legal_actions_filter: next_legal_actions_filters,
             self.dropout_prop: 0
         })
 
