@@ -1,0 +1,118 @@
+.fixed-header {
+    display: flex;
+    justify-content: space-around;
+    position: fixed;
+    top: 0;
+    z-index: 2;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    width: 100%;}
+    .fixed-header div {
+        border-left: 1px solid;
+        flex-grow: 1;
+        text-align: center;
+        padding: 10px 0;
+    }
+    .fixed-header span {
+        margin: 0 5%;
+        cursor: pointer;
+    }
+
+.control-panel input {
+    -webkit-appearance: none;
+    outline: none;
+    border:none;
+    background: none;
+    color: white;
+    width: 10%;
+    text-align: center;
+    font-size: 18px;
+}
+
+.graphs {
+    display: none;
+    flex-wrap: wrap;
+    height: 100%}
+    .graphs > div {
+        height: 50%;
+        width: 50%;
+    }
+    .graphs .ai-logs-container {
+        background-color: rgba(0, 0, 0, 0.1);
+        overflow-y:scroll;}
+        .graphs .ai-logs-container .log {
+            margin: 5px 0;
+            padding: 0 5px;
+        }
+        .graphs .ai-logs-container .warning {
+            color: orange;
+        }
+        .graphs .ai-logs-container .error {
+            color: red;
+        }
+
+.js-plotly-plot .plotly .modebar {
+    background-color: rgba(255, 255, 255, 0) !important;
+}
+
+.save-load-container {
+    position: fixed;
+    top:0;
+    left:0;
+    z-index:3;
+    display: none;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    flex-direction: row;
+    justify-content: center;}
+    .save-load-container .load-dialog, .save-dialog {
+        align-self: center;
+        display: none;
+        background-color: #faf8ef;
+        padding: 20px;
+        border-radius: 10px;
+        border: 3px solid #776e65;
+        z-index: 4;}
+        .save-load-container .load-dialog li {
+            cursor: pointer;
+        }
+        .save-load-container .load-dialog p {
+            margin-top: 10px;
+            text-align: center;
+        }
+        .save-load-container .load-dialog li:hover {
+            text-decoration: underline;
+        }
+        .save-load-container .save-dialog input[type='text'] {
+            -webkit-appearance: none;
+            outline: none;
+            border:none;
+            background: none;
+            width: 500px;
+            color: #776e65;
+            text-align: center;
+            font-size: 20px;
+        }
+        .save-load-container .save-dialog p {
+            margin-top: 10px;
+            text-align: center;
+        }
+        .save-load-container .save-dialog button {
+            -webkit-appearance: none;
+            background: #faf8ef;
+            outline: none;
+            border: 3px solid #776e65;
+            cursor: pointer;
+            width: 100px;
+            height: 50px;
+            border-radius: 10px;
+            color: #776e65;
+        }
+        .save-load-container .save-dialog button:hover {
+            background: #776e65;
+            color: #faf8ef;
+        }
+        .save-load-container .spinner {
+            visibility: hidden;
+        }

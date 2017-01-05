@@ -5,11 +5,12 @@
   <title>2048</title>
 
   <link href="style/main.css" rel="stylesheet" type="text/css">
-  <link rel="stylesheet" href="style/ai.css">
+  <link rel="stylesheet" href="style/ai-controller.css">
   <link rel="shortcut icon" href="favicon.ico">
   <link rel="apple-touch-icon" href="meta/apple-touch-icon.png">
   <link rel="apple-touch-startup-image" href="meta/apple-touch-startup-image-640x1096.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)"> <!-- iPhone 5+ -->
   <link rel="apple-touch-startup-image" href="meta/apple-touch-startup-image-640x920.png"  media="(device-width: 320px) and (device-height: 480px) and (-webkit-device-pixel-ratio: 2)"> <!-- iPhone, retina -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" charset="utf-8">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
@@ -86,29 +87,57 @@
     </p>
   </div>
 
-    <div class='training-dashboard'>
-        <p>
-            <span class='show-hide'>Hide</span>
-        </p>
-        <div class='dashboard-content'>
-            <p>
-                Load a Trained QNN:
-                <select id='trained-model'>
-                    <option value=""></option>
-                </select>
-                <button id='load-model'>Load</button>
-            <p>
-                Train for: <input type='number' name='train-episodes'>
-                <button id='start-training'>Start</button>
-                <span class='progress'></span>
-            </p>
-            <p>
-                <button id='save-model'>Save the current QNN</button>
-            </p>
-            <div id='learning-curve'></div>
-            <div id='score-chart'></div>
+    <div class='control-panel fixed-header'>
+        <div class='model-controller'>
+            <span class='load-model' title='Load a trained model' data-disabled="false"><i class='fa fa-upload'></i></span>
+            <span class='save-model' title='Save current model' data-disabled="false"><i class='fa fa-save'></i></span>
+        </div>
+        <div class='trainer'>
+            <label>Train for </label>
+            <input type='text' id="training-episodes" value="0">
+            <label> games</label>
+            <span class='train-toggle' title='Start' data-disabled="false"><i class='fa fa-play'></i></span>
+        </div>
+        <div class='player'>
+            <label>Play </label>
+            <input type='text' id='playing-episodes' value="0">
+            <label> games </label>
+            <span class='play-toggle' title='Start' data-disabled="false"><i class='fa fa-play'></i></span>
+        </div>
+        <div class='views'>
+            <span class='view-game' title='View game board'><i class='fa fa-th'></i></span>
+            <span class='view-stats' title='View Graphs'><i class='fa fa-line-chart'></i></span>
         </div>
     </div>
+
+    <div class="graphs">
+        <div class='ai-loss-container'>
+            <div id="loss-graph"></div>
+        </div>
+        <div class='ai-score-container'>
+            <div id="score-graph"></div>
+        </div>
+        <div class='ai-maxtile-container'>
+            <div id="maxtile-graph"></div>
+        </div>
+        <div class='ai-logs-container'></div>
+    </div>
+
+    <div class='save-load-container'>
+        <div class='load-dialog'>
+            <h3>Choose a model to load:</h3>
+            <ul></ul>
+            <p class='spinner' id='load-spinner'><i class='fa fa-spin fa-cog'></i></p>
+        </div>
+
+        <div class='save-dialog'>
+            <h3>Enter file name:</h3>
+            <input type='text' id='saved-model-name'>
+            <p><button id='save'>Save</button></p>
+            <p class='spinner' id='save-spinner'><i class='fa fa-spin fa-cog'></i></p>
+        </div>
+    </div>
+
 
   <script src="js/bind_polyfill.js"></script>
   <script src="js/classlist_polyfill.js"></script>
@@ -120,10 +149,14 @@
   <script src="js/local_storage_manager.js"></script>
   <script src="js/game_manager.js"></script>
   <script src="js/ai-frontend/communcation.service.js"></script>
-  <script src="js/ai-frontend/ai-frontend.js"></script>
-  <script src="js/ai-frontend/charter.js"></script>
-  <script src="js/ai-frontend/progress-reporter.js"></script>
-  <script src="js/canvasjs.min.js"></script>
+  <!--<script src="js/ai-frontend/ai-frontend.js"></script>-->
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="js/ai-frontend/utility.js"></script>
+  <script src="js/ai-frontend/graphs.js"></script>
+  <script src="js/ai-frontend/logger.js"></script>
+  <script src="js/ai-frontend/ai-controller/state-repesentations.js"></script>
+  <script src="js/ai-frontend/ai-controller/reward-functions.js"></script>
+  <script src="js/ai-frontend/ai-controller/controller.js"></script>
   <script src="js/application.js"></script>
 </body>
 </html>

@@ -1,2 +1,2 @@
-model_checkpoint_path: "model-5.30.2016..9.00.49.PM.ckpt"
-all_model_checkpoint_paths: "model-5.30.2016..9.00.49.PM.ckpt"
+model_checkpoint_path: "drqn-model-5-10-2016.ckpt"
+all_model_checkpoint_paths: "drqn-model-5-10-2016.ckpt"

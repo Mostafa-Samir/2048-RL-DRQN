@@ -9,15 +9,14 @@ class DQN:
     def __init__(self, qnn,
                        optimizer,
                        session,
-                       state_size,
+                       state_shape,
                        actions_count,
                        reply_memory_size=10000,
                        minibatch_size=32,
                        final_exploration_probability=0.05,
                        exploration_period=1000,
-                       discount_factor=0.95,
-                       target_freeze_period=1000,
-                       summary_writer=None):
+                       discount_factor=1.0,
+                       target_freeze_period=1000):
         """
         constructs a DQN Trainer
         An implemntation of:
@@ -31,8 +30,8 @@ class DQN:
             Tensorflow solver to train the network with
         session: tf.Session
             Tensorflow session to run the operations in
-        state_size: int
-            The size of the input states
+        state_shape: list
+            The shape of the single state tensor
         actions_count: int
             The maximum number of actions that could be carried out
         reply_memory_size: int
@@ -50,8 +49,6 @@ class DQN:
             The MDP's reward discount factor
         target_freeze_period: int
             The number of steps the target qnn is kept frozen
-        summary_writer: tf.SummaryWriter
-            Tensorflow summary writer
         """
 
 
@@ -59,7 +56,7 @@ class DQN:
         self.target_nn = qnn.clone()
         self.optimizer = optimizer
 
-        self.state_size = state_size
+        self.state_shape = state_shape
         self.actions_count = actions_count
 
         self.experience = deque()
@@ -78,10 +75,28 @@ class DQN:
         self.action_requests = 0  # captures how many times the action method was called
         self.iteration = 0  # captures how many times the train method was called
 
-        self.summary_writer  = summary_writer
         self.session = session
 
         self.build_graph()
+
+    def _reduce_max(self, input_tensor, reduction_indices, c):
+        """
+        a constrainable version of tf.reduce_max
+
+        Parameters:
+        -----------
+        input_tensor: Tensor
+        reduction_indices: Tensor
+        c: Tensor
+            The constraints tensor
+            A tensor of 0s and 1s where 1s represent the elements the reduction
+            should be made on, and 0s represent discarded elements
+        """
+
+        min_values = tf.reduce_min(input_tensor, reduction_indices, keep_dims=True)
+        not_c = tf.abs(c - 1)
+
+        return tf.reduce_max(input_tensor * c + not_c * min_values, reduction_indices)
 
 
     def build_graph(self):
@@ -89,22 +104,22 @@ class DQN:
         Builds Tensorflow computation graph for the DQN trainer
         """
 
+        persumed_state_shape = tuple([None] + self.state_shape)
+
         # placeholder for the inputs
-        self.states = tf.placeholder(tf.float32, (None, self.state_size))
-        self.next_states = tf.placeholder(tf.float32, (None, self.state_size))
-        #self.final_states_filter = tf.placeholder(tf.float32, (None,))
+        self.states = tf.placeholder(tf.float32, persumed_state_shape)
+        self.next_states = tf.placeholder(tf.float32, persumed_state_shape)
         self.rewards = tf.placeholder(tf.float32, (None,))
         self.experience_action_filter = tf.placeholder(tf.float32, (None, self.actions_count))
-        #self.next_legal_actions_filter = tf.placeholder(tf.float32, (None, self.actions_count))
-        self.dropout_prop = tf.placeholder(tf.float32)
+        self.next_legal_actions_filter = tf.placeholder(tf.float32, (None, self.actions_count))
 
         # pi(S) = argmax Q(S,a) over a
-        self.actions_scores = tf.identity(self.prediction_nn(self.states, self.dropout_prop))
+        self.actions_scores = tf.identity(self.prediction_nn(self.states))
         self.predicted_actions = tf.argmax(self.actions_scores, dimension=1)
 
         # future_estimate = R + gamma * max Q(S',a') over a'
         self.next_actions_scores = tf.stop_gradient(self.target_nn(self.next_states))
-        self.target_values = tf.reduce_max(self.next_actions_scores, reduction_indices=[1,])
+        self.target_values = self._reduce_max(self.next_actions_scores, reduction_indices=[1,], c=self.next_legal_actions_filter)
         self.future_estimate = self.rewards + self.discount * self.target_values
 
         # predicted_value = Q(S, a)
@@ -121,18 +136,6 @@ class DQN:
                 gradients[i] = (tf.clip_by_value(grad, -1, 1), var)
 
         self.train_computation  = self.optimizer.apply_gradients(gradients)
-
-        # summaries
-        # Add histograms for gradients.
-        """for grad, var in gradients:
-            tf.histogram_summary(var.name, var)
-            if grad is not None:
-                tf.histogram_summary(var.name + '/gradients', grad)"""
-        # loss summary
-        tf.scalar_summary("loss", self.loss)
-
-        self.collect_summries = tf.merge_all_summaries()
-        self.no_op = tf.no_op()
 
 
     def remember(self, state, action, reward, nextstate, next_legal_actions):
@@ -153,6 +156,8 @@ class DQN:
         next_legal_actions: list
             The list of legal actions for nextstate
         """
+        #state = np.reshape(state, self.state_shape).astype(np.float32)
+        #nextstate = np.reshape(nextstate, self.state_shape).astype(np.float32)
 
         new_experience = (state, action, reward, nextstate, next_legal_actions)
         self.experience.append(new_experience)
@@ -207,8 +212,8 @@ class DQN:
             and directly use the Qnn
         """
 
-        state = np.array([state], dtype=np.float32)
-        feed_dict = {self.states: state, self.dropout_prop: 0}
+        state = np.reshape(state, tuple([1] + self.state_shape))
+        feed_dict = {self.states: state}
 
         if not play_mode:
             self.action_requests += 1
@@ -236,10 +241,12 @@ class DQN:
         random_indecies = random.sample(range(len(self.experience)), self.minibatch_size)
         samples = [self.experience[i] for i in random_indecies]
 
-        states = np.empty((self.minibatch_size, self.state_size))
+        real_state_shape = tuple([self.minibatch_size] + self.state_shape)
+
+        states = np.empty(real_state_shape, dtype=np.float32)
         chosen_actions_filters = np.zeros((self.minibatch_size, self.actions_count))
         rewards = np.empty((self.minibatch_size,))
-        nextstates = np.empty((self.minibatch_size, self.state_size))
+        nextstates = np.empty(real_state_shape, dtype=np.float32)
         next_legal_actions_filters = np.zeros((self.minibatch_size, self.actions_count))
 
         for i, (state, action, reward, nextstate, next_legal_actions) in enumerate(samples):
@@ -250,29 +257,52 @@ class DQN:
 
             for action in range(self.actions_count):
                 if action not in next_legal_actions:
-                    next_legal_actions_filters[i][action] = float("-inf")
+                    next_legal_actions_filters[i][action] = 1.
 
-        summarize = self.iteration % 100 == 0 and self.summary_writer is not None
-
-        loss,_,summary = self.session.run([
+        loss,_ = self.session.run([
             self.loss,
             self.train_computation,
-            self.collect_summries if summarize else self.no_op
         ], {
             self.states: states,
             self.experience_action_filter: chosen_actions_filters,
             self.rewards: rewards,
             self.next_states: nextstates,
-            #self.next_legal_actions_filter: next_legal_actions_filters,
-            self.dropout_prop: 0
+            self.next_legal_actions_filter: next_legal_actions_filters,
         })
 
         if self.iteration != 0 and self.iteration % self.freeze_period == 0:
             self.target_nn.assign_to(self.prediction_nn, self.session)
 
-        if summarize:
-            self.summary_writer.add_summary(summary, self.iteration)
-
         self.iteration +=1
 
         return (loss, self.iteration)
+
+
+    def serialize(self):
+        """
+        serializes the inetrnal variables for checkpoint saving
+
+        Returns: dict
+        """
+
+        return {
+            'experience': list(self.experience),
+            'iteration': self.iteration,
+            'action_requests': self.action_requests
+        }
+
+    def restore(self, checkpoint_data):
+        """
+        restores internal variables values from a saved checkpoint
+
+        Parameters:
+        ----------
+        checkpoint_data: dict
+        """
+
+        self.iteration = checkpoint_data['iteration']
+        self.action_requests = checkpoint_data['action_requests']
+
+        self.experience = deque()
+        for transition in checkpoint_data['experience']:
+            self.experience.append(tuple(transition))

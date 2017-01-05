@@ -6,16 +6,31 @@ var AI = {};
 AI.trainingEpisodes = 1000;
 AI.playedGames = 0;
 AI.afterTrainCallback = null;
+AI.manuallyStoppedTraining = false;
+AI.avg_loss = 0;
 
-AI.log2 = function(state) {
-    return state.map((cell) => cell === 0 ? 0 : Math.log2(cell))
+AI.prepare = function(state) {
+    let input = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]];
+
+    for(let x = 0; x < 4; ++x) {
+        for(let y = 0; y < 4; ++y) {
+            let channels = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+            let indx = state[x][y] === 0 ? 0 : Math.log2(state[x][y])
+
+            channels[indx] = 1;
+
+            input[x][y] = channels;
+        }
+    }
+
+    return input;
 }
 
 AI.init = function(learningCurveCharter, scoresCharter, reporter) {
     this.GameManager = new GameManager(4, KeyboardInputManager, HTMLActuator, LocalStorageManager);
-    this.learningCurveCharter = learningCurveCharter;
+    /*this.learningCurveCharter = learningCurveCharter;
     this.scoresCharter = scoresCharter;
-    this.reporter = reporter;
+    this.reporter = reporter;*/
 };
 
 AI.move = function(direction) {
@@ -28,9 +43,7 @@ AI.restart = function() {
 
 AI.state = function() {
     let state = this.GameManager.serialize();
-    state.grid._2d = this.GameManager.grid.getNumericalRepresentation();
-    state.grid._1d = this.GameManager.grid.getNumericalLinearization();
-
+    state.grid = this.GameManager.grid;
     return state;
 };
 
@@ -78,49 +91,51 @@ AI.getAction = function(state) {
 
 AI.makeAMove = function(direction) {
     let state = this.state();
-    let countEmpyCells = (counter, cell) => cell ? counter : ++counter
-    let emptyCount = state.grid._1d.reduce(countEmpyCells, 0);
-    emptyCount = emptyCount || 1;
+    let grid = AI.prepare(state.grid.getNumericalRepresentation());
 
     this.move(direction);
     let newstate = this.state();
-    let newEmptyCount = state.grid._1d.reduce(countEmpyCells, 0);
-    newEmptyCount = newEmptyCount || 1;
-    let newStateMaxTile = this.GameManager.grid.maxCellValue();
+    let newgrid = AI.prepare(newstate.grid.getNumericalRepresentation());
+    let nextLegalActions = this.listLegalActions();
 
     let plainReward = newstate.score - state.score;
-    let adjustedReward = 0.25*(Math.log2(newEmptyCount)*newstate.score-Math.log2(emptyCount)*state.score);
-    let _adjustedReward = (Math.log2(newStateMaxTile) / 11) * adjustedReward;
-    let nextLegalActions = this.listLegalActions()
+    let log2Reward = plainReward !== 0 ? Math.log2(plainReward) : 0;
 
     return {
-        state: this.log2(state.grid._1d),
+        state: grid,
         action: direction,
-        reward:  plainReward,
-        nextstate: this.log2(newstate.grid._1d),
-        nextLegalActions: nextLegalActions
+        reward:  log2Reward,
+        nextstate: newgrid,
+        nextLegalActions: nextLegalActions,
+        lastTransition: newstate.over
     }
 }
 
 AI._recursiveTrain = function() {
+    let graphsInView = document.querySelector('div.graphs').style.display !== "none";
+    if(AI.manuallyStoppedTraining) {
+        return;
+    }
+
     let state = this.state();
 
     if(state.over) {
         this.playedGames++;
-        console.log("Episodes: %d/%d", this.playedGames, this.trainingEpisodes);
+        logger.log(`Episodes: ${this.playedGames}/${this.trainingEpisodes}`);
 
 
-        if(this.scoresCharter) {
-            let datapoint = {
-                x: this.playedGames,
-                y: state.score
-            };
+        graphs.scoresGraph.x.push(this.playedGames);
+        graphs.scoresGraph.y.push(state.score);
 
-            this.scoresCharter.update(datapoint);
+        let maxCell = state.grid.maxCellValue();
+
+        if(!graphs.maxTilesGraph.data[maxCell]) {
+            graphs.maxTilesGraph.data[maxCell] = 0;
         }
+        graphs.maxTilesGraph.data[maxCell]++;
 
-        if(this.reporter) {
-            this.reporter.report(this.playedGames, this.trainingEpisodes);
+        if(graphsInView) {
+            graphs.draw()
         }
 
         if(this.playedGames === this.trainingEpisodes) {
@@ -138,7 +153,7 @@ AI._recursiveTrain = function() {
     let availableMoves = this.listLegalActions();
 
     $http.post('/dfnn/action', {
-        state: this.log2(state.grid._1d),
+        state: AI.prepare(state.grid.getNumericalRepresentation()),
         playMode:false,
         legalActions: availableMoves
     })
@@ -150,13 +165,26 @@ AI._recursiveTrain = function() {
     })
     .then((response) => {
         if(response.success) {
-            if(this.learningCurveCharter) {
-                let point = {
-                    x: response.step,
-                    y: response.loss
+            if(response.hasOwnProperty('loss')) {
+                graphs.lossGraph.x.push(response.step - 1);
+                graphs.lossGraph.y.push(response.loss);
+
+                if(response.step === 1) {
+                    graphs.avgLossGraph.x.push(response.step - 1);
+                    graphs.avgLossGraph.y.push(response.loss);
                 }
 
-                this.learningCurveCharter.update(point);
+                this.avg_loss += response.loss;
+                if(response.step % 100 === 0) {
+                    graphs.avgLossGraph.x.push(response.step - 1);
+                    graphs.avgLossGraph.y.push(this.avg_loss / 100);
+
+                    this.avg_loss = 0;
+                }
+
+                if(graphsInView) {
+                    graphs.draw();
+                }
             }
             this._recursiveTrain();
         }
@@ -177,7 +205,7 @@ AI._recursivePlay = function() {
     let availableMoves = this.listLegalActions();
 
     $http.post('/dfnn/action', {
-        state: state.grid._1d,
+        state: state.grid._2d,
         playMode:true,
         legalActions: availableMoves
     })
@@ -190,10 +218,15 @@ AI._recursivePlay = function() {
 }
 
 AI.train = function(episodes, callback) {
-    this.restart();  // restart the game first
-    this.trainingEpisodes = episodes;
-    this.playedGames = 0;
-    this.afterTrainCallback = callback || function() { };
+    if(!this.manuallyStoppedTraining) {
+        this.restart();  // restart the game first
+        this.trainingEpisodes = episodes;
+        this.playedGames = 0;
+        this.afterTrainCallback = callback || function() { };
+    }
+    else {
+        this.manuallyStoppedTraining = false;
+    }
 
     this._recursiveTrain();
 }

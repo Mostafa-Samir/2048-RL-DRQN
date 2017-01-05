@@ -112,14 +112,14 @@ Grid.prototype.serialize = function () {
 
   return {
     size: this.size,
-    cells: cellState
+    cells: cellState,
+    numerical2D: this.getNumericalRepresentation(),
+    numerical1D: this.getNumericalLinearization(),
+    maxCell: this.maxCellValue(),
+    emptyCellsCount: this.emptyCellCount()
   };
 };
 
-/*
- * represents the grid with array of numbers instead of Tiles
- * @return [Array]: the array of numbers representing the grid
- */
 Grid.prototype.getNumericalRepresentation = function () {
 
     var numericalGrid = [new Array(4), new Array(4), new Array(4), new Array(4)];
@@ -142,12 +142,10 @@ Grid.prototype.getNumericalLinearization = function() {
 
     var linearization = [];
 
-    for(var column = 0; column < 4; column++) {
-
-        if(column % 2 == 0)
-            linearization = linearization.concat(numericalGrid[column].reverse());
-        else
-            linearization = linearization.concat(numericalGrid[column]);
+    for(var x = 0; x < 4; x++) {
+        for(var y = 0; y < 4; y++) {
+            linearization.push(numericalGrid[x][y])
+        }
     }
 
     return linearization;
@@ -164,4 +162,13 @@ Grid.prototype.maxCellValue = function() {
                 max = numericalGrid[x][y];
 
     return max;
+};
+
+Grid.prototype.emptyCellCount = function() {
+    var linearization = this.getNumericalLinearization();
+    var count = 0;
+
+    linearization.forEach(cell => count += cell === 0 ? 1 : 0);
+
+    return count;
 };
