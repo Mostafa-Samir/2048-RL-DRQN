@@ -20,7 +20,7 @@ DRQN works just like DQN, with the exception that the reply memory in DRQN store
 
 The loss is function is the same as the one in DQN but in addition to taking the mean across the time steps:
 
-![](https://latex.codecogs.com/gif.latex?%5Clarge%20%5Cmathcal%7BL%7D%28%5Ctheta%29%3D%5Cmathbb%7BE%7D_%7Be%27%20%5Csim%20%5Cmathcal%7BD%7D%7D%5Cleft%5B%20%5Cmathbb%7BE%7D_%7B%28s%2Ca%2Cr%2Cs%27%29%20%5Cin%20e%27%7D%5Cleft%5B%5Cleft%28r%20&plus;%20%5Cgamma%5Cmax_%7Ba%27%7DQ%28s%27%2Ca%27%3B%5Coverline%7B%5Ctheta%7D%29%20-%20Q%28s%2C%20a%3B%5Ctheta%29%20%5Cright%20%29%5E2%20%5Cright%20%5D%5Cright%5D)
+![](https://latex.codecogs.com/gif.latex?%5Clarge%20%5Cmathcal%7BL%7D%28%5Ctheta%29%3D%5Cmathbb%7BE%7D_%7Be%27%20%5Csim%20%5Cmathcal%7BD%7D%7D%5Cleft%5B%20%5Cmathbb%7BE%7D_%7B%28s%2Ca%2Cr%2Cs%27%29%20%5Csim%20e%27%7D%5Cleft%5B%5Cleft%28r%20&plus;%20%5Cgamma%5Cmax_%7Ba%27%7DQ%28s%27%2Ca%27%3B%5Coverline%7B%5Ctheta%7D%29%20-%20Q%28s%2C%20a%3B%5Ctheta%29%20%5Cright%20%29%5E2%20%5Cright%20%5D%5Cright%5D)
 
 ## References
 
